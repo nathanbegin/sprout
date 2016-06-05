@@ -1,0 +1,66 @@
+{% extends "header.html" %}
+
+{% block body %}
+
+
+.: <a href='/' > Home </a>
+    <div class='container-fluid' align='left' style="width:100%;overflow:auto">
+    <embed type="image/svg+xml" src="{{ graph_sensor|safe}}" style='max-width:600px; max-height:400px;'>
+    <embed type="image/svg+xml" src="{{ graph_wu|safe}}" style='max-width:600px; max-height:400px;'>
+    
+    </div>
+
+    <div>LATEST SENSOR : {{ sensor|safe }} </div>
+    <div>LATEST WU : {{ wu|safe }} </div>
+
+   <br>
+
+
+   {{ port_status|safe }}
+  <br>
+
+
+
+    <nav class="navbar">
+
+
+    <ul class="nav nav-tabs">
+      <li role="presentation" class="{{ schedules_active|safe }}"><a href="#schedules" aria-controls="wdev" role="tab" data-toggle="tab">Schedules</a></li>
+      <li role="presentation" class="{{ zones_active|safe }}"><a href="#zones" aria-controls="wdev" role="tab" data-toggle="tab">Zones</a></li>
+      <li role="presentation" class="{{ logs_active|safe }}"><a href="#logs" aria-controls="wdev" role="tab" data-toggle="tab">Log</a></li>
+    </ul>
+   </nav>
+
+
+      <!-- Tab panes -->
+    <div class="tab-content">
+
+      <div role="tabpanel" class="tab-pane fade in {{ schedules_active|safe }}" id="schedules" style="width:90%">
+        {{ schedules_list|safe }}
+      </div>
+
+
+      <div role="tabpanel" class="tab-pane fade in {{ zones_active|safe }}" id="zones" style="width:90%">
+        {{ zones_list|safe }}
+      </div>
+
+
+      <div role="tabpanel" class="tab-pane fade in {{ logs_active|safe }}" id="logs" style="width:90%">
+        {{ logs_list|safe }}
+      </div>
+
+    </div>
+
+
+
+
+
+
+
+   {{ schedules_add_form|safe }}
+
+
+   {{ zones_edit_forms|safe }}
+
+
+{% endblock %}
