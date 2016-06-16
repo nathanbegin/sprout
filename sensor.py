@@ -1,10 +1,16 @@
 # Display Temp Humidity
 import sys
+import RPi.GPIO as GPIO
 
 import Adafruit_DHT
 import time
 import os
+from inc.functions import *
+from inc.csv import *
+from inc.config import *
 
+
+GPIO.setmode(GPIO.BOARD)
 
 # how to rename different columns
 columns_rename = {'time': 'timestamp',
@@ -27,33 +33,21 @@ columns_rename = {'time': 'timestamp',
                   }
 
 
-def vpdcalc(temp, rh):
-    """
-    :param temp: Temperature in °C (ex: 25 for 25°C)
-    :param rh: relative humidity in % (ex: 30 for 30%)
-    :return: Vapour Presure Deficit (Pa)
-    """
-    return 610.7 * 10**((7.5 * float(temp)) / (237.3 + float(temp))) * ((100 - float(rh)) / 100)
-
-
 def sensor():
     sensor = Adafruit_DHT.AM2302
-    pin = 24
 
-    humidity, temperature = Adafruit_DHT.read_retry(sensor, pin)
+    humidity, temperature = Adafruit_DHT.read_retry(sensor, TEMP_SENSOR_PIN)
     humidity, temperature = str(round(humidity, 1)), str(round(temperature, 1))
 
-    newrow = [time.strftime("%Y-%m-%d - %H:%M:%S"), temperature, humidity,
-              str(round(vpdcalc(temperature, humidity), 1))]
+    newrow = [time.strftime("%Y-%m-%d %H:%M:%S"), temperature, humidity,
+              str(round(vpdcalc(float(temperature), float(humidity)), 1))]
 
-    destfolder = os.path.join("/home", "pi", "sprout", "weatherlogs", "sensor", time.strftime("%Y"))
+    destfolder = os.path.join(FOLDERS['sensor'], time.strftime("%Y"))
     destfile = os.path.join(destfolder, time.strftime("%Y-%m") + ".csv")
 
     if not os.path.isdir(destfolder):
         os.makedirs(destfolder)
         os.chmod(destfolder, 0o777)
-
-    print(temperature, humidity)
 
     if not os.path.isfile(destfile):
         with open(destfile, "w+") as f:

@@ -4,6 +4,9 @@ import os
 import numpy as np
 import pandas as pd
 from datetime import date, timedelta
+from inc.functions import *
+from inc.csv import *
+from inc.config import *
 
 
 # how to rename different columns
@@ -34,13 +37,6 @@ yesterday = date.today() - timedelta(1)
 yesterday_folder, yesterday_csv = yesterday.strftime("%Y"), yesterday.strftime("%Y-%m") + '.csv'
 
 
-def vpdcalc(temp, rh):
-    """
-    :param temp: Temperature in °C (ex: 25 for 25°C)
-    :param rh: relative humidity in % (ex: 30 for 30%)
-    :return: Vapour Presure Deficit (Pa)
-    """
-    return 610.7 * 10**((7.5 * temp) / (237.3 + temp)) * ((100 - rh) / 100)
 
 
 def bom():
@@ -99,8 +95,8 @@ def bom():
     df = df.replace({'-': np.nan}).fillna(method='bfill')
 
     # make sure all the numeric are indeed numeric
-    for c in ['temp', 'app_temp', 'wind', 'rh', 'rain_rate', 'rain_trace', 'cloud', 'dew', 'press', 'vis']:
-        df = df.applymap(float)
+    # for c in ['temp', 'app_temp', 'wind', 'rh', 'rain_rate', 'rain_trace', 'cloud', 'dew', 'press', 'vis']:
+    df = df.applymap(float)
 
     # add vpd
     df['vpd'] = vpdcalc(df['temp'], df['rh'])

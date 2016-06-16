@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/python3
 import time
 start= time.time()
 
@@ -6,103 +6,22 @@ import os
 import RPi.GPIO as GPIO
 import sys
 import collections
-inverted = True
-GPIO.setwarnings(False)
 
-
-# check folders
-for fold in [os.path.join("/home", "pi", "sprout", "logs"),
-             os.path.join("/home", "pi", "sprout", "config")]:
-    if not os.path.isdir(fold):
-        os.makedirs(fold)
-
-
-# files / folders
-sprout_folder = os.path.join("/home", "pi", "sprout")
-user_schedfile = os.path.join(sprout_folder, "config", "user_schedule.txt")
-zonesfile = os.path.join(sprout_folder, "config", "zones.txt")
-# commands_file = os.path.join(sprout_folder, "config", "commands.txt")
-logfile = os.path.join(sprout_folder, "logs", time.strftime('%Y%m') + "_logs.txt")
-statusfile = os.path.join(sprout_folder, "config", "status.txt")
-# sunsetfile = os.path.join(sprout_folder,"weatherlogs", "sunset.txt")
-# weather_logfolder = os.path.join(sprout_folder,"weatherlogs", "wu", time.strftime("%Y-%m"))
-# weather_logfile = os.path.join(weather_logfolder, "last24h.csv")
-
+from inc.functions import *
+from inc.csv import *
+from inc.config import *
 
 
 
 # variables
-# today = time.strftime('%Y%m%d')
 opened = []   # list of ports that should be in opened state right now
 to_delete = []  # list of expired temporary schedules that should be deleted now from user_schedule
 main_dependant = []  # list of ports which are linked to the main valve
-gpio_boardports = [11, 12, 13, 15, 16, 18, 22]
-main_valve = 11
-valves = [12, 13, 15, 16, 18, 22]
-
-    
-
-
-def load_csv(myfile, header=True):
-    """
-    loads a CSV to a dict of dict
-    """
-    import collections
-    with open(myfile, "r") as f:
-        r = 0
-        ret = collections.defaultdict(collections.OrderedDict)
-        for row in f.readlines():
-            if r == 0 and header is True:
-                keys = list(map(lambda x: x.strip("\n"), row.split(",")))
-                r = -1
-                header = False
-            else:
-                rsplit = row.split(",")
-                for i, k in enumerate(keys):
-                    ret[r][k] = rsplit[i].strip("\n")
-
-            r += 1
-
-    return ret
-def save_csv(filename, d, header=True):
-    if header:
-        hrow = []
-
-        for k in d[0].keys():
-            hrow.append(str(k))
-
-        with open(filename, 'w') as f:
-            f.write(",".join(hrow) + "\n")
-
-    for row in d:
-        newrow = []
-
-        for k in d[row].keys():
-            newrow.append(str(d[row][k]))
-
-        with open(filename, 'a+') as f:
-            f.write(",".join(newrow) + "\n")
-def convert_from_minutes(x):
-    h = str(int(x / 60))
-    m = str(int(x % 60)) if int(x % 60) > 9 else "0" + str(int(x % 60))
-    return h + ":" + m
-def convert_to_minutes(hour):
-    """
-
-    :param hour: time ex: 18:45
-    :return: 18 * 60 + 45 minutes
-    """
-    return int(int(hour.strip(" ").split(":")[0]) * 60 + int(hour.strip(" ").split(":")[1]))
-def invert(s, inverted=True):
-    """
-    some (most) relays invert the signal so that they remain "off" by default.
-    this function just inverts the boolean if the relay requires to
-    :param s: boolean, signal
-    :return: (s) if inverted is False or (not s) if inverted in True
-     """
-    return not s if inverted else s
-
 now = convert_to_minutes(time.strftime("%H:%M"))
+inverted = True
+GPIO.setwarnings(False)
+
+
 
 
 def convert():
@@ -172,20 +91,21 @@ def irrigation(inverted=True):
 
     # loop for individual valves
     for v in valves:
+        print(v,  invert(GPIO.input(v), inverted))
         if v in opened:
             if not invert(GPIO.input(v), inverted):  # the valve was closed before
                 GPIO.output(v, invert(True, inverted))  # let's open it !
                 with open(logfile, "a+") as f:
                     f.write(time.strftime('%Y-%m-%d %H:%M:%S') +
                             ",open," + str(v) + "\n")
-                    # print(time.strftime('%Y-%m-%d %H:%M:%S') + ",open," + str(v) + "\n")
+                    print(time.strftime('%Y-%m-%d %H:%M:%S') + ",open," + str(v) + "\n")
         else:
             if invert(GPIO.input(v), inverted):  # the valve was opened before
                 GPIO.output(v, invert(False, inverted))  # let's close it
                 with open(logfile, "a+") as f:
                     f.write(time.strftime('%Y-%m-%d %H:%M:%S') +
                             ",close," + str(v) + "\n")
-                    # print(time.strftime('%Y-%m-%d %H:%M:%S') + ",close," + str(v) + "\n")D
+                    print(time.strftime('%Y-%m-%d %H:%M:%S') + ",close," + str(v) + "\n")
 
     # open main valve
     if len([x for x in main_dependant if x in opened]) > 0:
@@ -195,14 +115,14 @@ def irrigation(inverted=True):
             with open(logfile, "a+") as f:
                 f.write(time.strftime('%Y-%m-%d %H:%M:%S') +
                         ",open main," + str(main_valve) + "\n")
-                # print(time.strftime('%Y-%m-%d %H:%M:%S') + ",open main," + str(main_valve) + "\n")
+                print(time.strftime('%Y-%m-%d %H:%M:%S') + ",open main," + str(main_valve) + "\n")
     else:
         if invert(GPIO.input(main_valve), inverted):
             GPIO.output(main_valve, invert(False, inverted))
             with open(logfile, "a+") as f:
                 f.write(time.strftime('%Y-%m-%d %H:%M:%S') +
                         ",close main," + str(main_valve) + "\n")
-                # print(time.strftime('%Y-%m-%d %H:%M:%S') + ",close main," + str(main_valve) + "\n")
+                print(time.strftime('%Y-%m-%d %H:%M:%S') + ",close main," + str(main_valve) + "\n")
 
     # create status file
     with open(statusfile, "w") as f:

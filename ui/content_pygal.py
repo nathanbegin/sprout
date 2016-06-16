@@ -1,53 +1,12 @@
-import time
 import os
+import time
 import pygal
-from datetime import date, timedelta
+from datetime import date, timedelta, datetime
 
+from inc.functions import *
+from inc.csv import *
+from inc.config import *
 
-def load_csv(myfile, header=True):
-    """
-    loads a CSV to a dict of dict
-    """
-    import collections
-    with open(myfile, "r") as f:
-        r = 0
-        ret = collections.defaultdict(collections.OrderedDict)
-        for row in f.readlines():
-            if r == 0 and header is True:
-                keys = list(map(lambda x: x.strip("\n"), row.split(",")))
-                r = -1
-                header = False
-            else:
-                rsplit = row.split(",")
-                for i, k in enumerate(keys):
-                    ret[i][k] = rsplit[i].strip("\n")
-
-            r += 1
-
-    return ret
-
-
-def load_csv2(myfile, header=True):
-    """
-    loads a CSV to a dict of dict
-    """
-    import collections
-    with open(myfile, "r") as f:
-        r = 0
-        ret = collections.defaultdict(list)
-        for row in f.readlines():
-            if r == 0 and header is True:
-                keys = list(map(lambda x: x.strip("\n"), row.split(",")))
-                r = -1
-                header = False
-            else:
-                rsplit = row.split(",")
-                for i, k in enumerate(keys):
-                    ret[k].append(rsplit[i].strip("\n"))
-
-            r += 1
-
-    return ret
 
 
 def graph(what):
@@ -56,6 +15,7 @@ def graph(what):
     what = 'wu' or 'sensor'
     """
     # dates
+    return
 
     # ext = ".txt" if what == "sensor" else ".csv"
     ext = ".csv"
@@ -69,43 +29,43 @@ def graph(what):
     folder = os.path.join("/home", "pi", "sprout", "weatherlogs", what)
 
     # files
-    today_file = os.path.join(folder, today.strftime("%Y-%m"), today.strftime("%Y-%m-%d") + ext)
-    yesterday_file = os.path.join(folder, yesterday.strftime("%Y-%m"), yesterday.strftime("%Y-%m-%d") + ext)
+    today_file = os.path.join(folder, today.strftime("%Y"), today.strftime("%Y-%m") + ext)
+    yesterday_file = os.path.join(folder, yesterday.strftime("%Y"), yesterday.strftime("%Y-%m") + ext)
     # today_file = os.path.join(folder, '2016-06', '2016-06-01.csv')
     # yesterday_file = os.path.join(folder, '2016-05', '2016-05-31.csv')
 
     # load files
     # print(today_file)
     data = load_csv2(yesterday_file)
-    auj = load_csv2(today_file)
 
     # merge
+    auj = load_csv2(today_file)
     for k in data.keys():
         data[k].extend(auj[k])
 
-    for key in ['pressurem', 'dewptm', 'precip_ratem', 'vpd', 'wspdm', 'hum', 'tempm','temp','rh']:
+    for key in ['temp']:
         if key in data.keys():
-        	data[key] = list(map(float, data[key]))
+            print(key)
+            data[key] = list(map(float, data[key]))
 
-    # return data
+   # return data
     # try pygal
-
-
+    timestamps = []
+    dat = []
+    for i, ts in enumerate(data['timestamp']):
+        if datetime.strptime(ts, "%Y-%m-%d %H:%M:%S") >= ( datetime.today() - timedelta(1)):
+            timestamps.append(ts)
+            dat.append(data['temp'][i])
 # def graph():
-
-    varnames = {'temperature': {'wu': 'tempm', 'bom': 'temp', 'sensor': 'temp'},
-                'rh': {'wu': 'hum', 'bom': 'rh', 'sensor': 'rh'},
-                'time': {'wu': 'timestamp', 'bom': 'timestamp', 'sensor': 'time'},
-                }
 
     # data_sensor = load_data('sensor')
     # data_bom = load_data('bom')
     # data_wu = load_data('wu')
 
     graph = pygal.Line()
-    graph.title = 'Temperatures'
-    graph.x_labels = data[varnames['time'][what]]
-    graph.add('Temperature', data[varnames['temperature'][what]])
+    graph.title = what
+    graph.x_labels = timestamps
+    graph.add('Temperature', dat)
     # graph.add('bom', data[varnames['temperature']['bom']])
     # graph.add('sensor', data[varnames['temperature']['sensor']])
     # graph.add('hum',  data['hum'])

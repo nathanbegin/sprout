@@ -1,12 +1,20 @@
 
 # create application object
+import os
+from datetime import date, timedelta, datetime
+import time
+
 from flask import Flask, request, current_app, flash, url_for, redirect
 from flask import render_template
 from ui import content_status, content_schedules, content_zones, content_sensor, content_wu, content_pygal
-import time
+
+
+from inc.functions import *
+from inc.csv import *
+
 
 app = Flask(__name__)
-
+app.secret_key = "super secret key"
 
 def log(t, ip, msg=""):
     with open("logs/requests_logs.txt", "a+") as f:
@@ -23,22 +31,25 @@ def log_request():
 @app.route('/index/')
 @app.route('/schedules/')
 def home():
+  # try:
+    flash("welcome home")
     return render_template('index.html',
-                           graph_sensor=content_pygal.graph('sensor'),
-                           graph_wu=content_pygal.graph('wu'),
-                           # graph_bom=content_pygal.graph('bom'),
-                           schedules_active="active",
-                           zones_active="",
-                           logs_active="",
-                           port_status=content_status.port_status(),
-                           schedules_list=content_schedules.schedules_list(),
-                           schedules_add_form=content_schedules.schedules_add_form(),
-                           zones_list=content_zones.zones_list(),
-                           zones_edit_forms=content_zones.zones_edit_forms(),
-                           sensor=content_sensor.content_sensor(),
-                           wu=content_wu.latest()
-                           )
-
+                         graph_sensor=content_pygal.graph('sensor'),
+                         graph_wu=content_pygal.graph('wu'),
+                         # graph_bom=content_pygal.graph('bom'),
+                         schedules_active="active",
+                         zones_active="",
+                         logs_active="",
+                         port_status=content_status.port_status(),
+                         schedules_list=content_schedules.schedules_list(),
+                         schedules_add_form=content_schedules.schedules_add_form(),
+                         zones_list=content_zones.zones_list(),
+                         zones_edit_forms=content_zones.zones_edit_forms(),
+                         sensor=content_sensor.content_sensor(),
+                         wu=content_wu.latest()
+                         )
+  # except Exception as e:
+    # return render_template('500.html', error=e)
 
 @app.route('/edit_zone/', methods=['GET', 'POST'])
 def edit_zone():
@@ -96,21 +107,23 @@ def add_schedule():
 
 @app.route('/switch_schedule/', methods=['GET'])
 def switch_schedules():
-    content_schedules.switch_sched(int(request.args.get('zid')))
+    try:
+      content_schedules.switch_sched(int(request.args.get('zid')))
 
-    return render_template('index.html',
-                           schedules_active="active",
-                           zones_active="",
-                           logs_active="",
-                           port_status=content_status.port_status(),
-                           schedules_list=content_schedules.schedules_list(),
-                           schedules_add_form=content_schedules.schedules_add_form(),
-                           zones_list=content_zones.zones_list(),
-                           zones_edit_forms=content_zones.zones_edit_forms(),
-                           sensor=content_sensor.content_sensor(),
-                           wu=content_wu.latest()
-                           )
-
+      return render_template('index.html',
+                             schedules_active="active",
+                             zones_active="",
+                             logs_active="",
+                             port_status=content_status.port_status(),
+                             schedules_list=content_schedules.schedules_list(),
+                             schedules_add_form=content_schedules.schedules_add_form(),
+                             zones_list=content_zones.zones_list(),
+                             zones_edit_forms=content_zones.zones_edit_forms(),
+                             sensor=content_sensor.content_sensor(),
+                             wu=content_wu.latest()
+                             )
+    except Exception as e:
+      return render_template('500.html', error=str(e))
 
 @app.route('/switch_main/', methods=['GET'])
 def switch_main():
@@ -131,4 +144,7 @@ def switch_main():
 
 @app.errorhandler(404)
 def page_not_found(e):
-    return render_template('404.html')
+    try:
+      return render_template('404.html')
+    except Exception as e:
+        print(e)
