@@ -32,6 +32,10 @@ TEMP_SENSOR_PIN = 24
 
 
 
+#Weather underground
+WUstationID = ''  # closest weather station.
+WUkey='33baa1312f9c6922' # WU API key
+
 
 
 
